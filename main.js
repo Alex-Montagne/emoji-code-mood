@@ -3,11 +3,11 @@
 // CONFIGURATION ET INITIALISATION
 // ========================================
 
-console.log('🎭 Emoji Code Humeur - Version Module Corrigé v2.3');
+console.log('🎭 Emoji Code mood - Version Module Corrigé v2.3');
 
 // Variables globales
 let supabase = null;
-let humeurs = [];
+let moods = [];
 let selectedEmoji = '';
 let sessionStartTime = new Date();
 let autoRefreshInterval = null;
@@ -36,14 +36,14 @@ async function initSupabase() {
         // Initialisation du client via le module (avec attente intégrée)
         supabase = await getSupabaseClient();
         
-        // Test de connexion avec la table "humeur"
-        console.log('🧪 Test de connexion à la table humeur...');
-        const { data, error } = await supabase.from('humeur').select('count').limit(1);
+        // Test de connexion avec la table "mood"
+        console.log('🧪 Test de connexion à la table mood...');
+        const { data, error } = await supabase.from('mood').select('count').limit(1);
         if (error) {
-            throw new Error(`Erreur de connexion à la table 'humeur': ${error.message}`);
+            throw new Error(`Erreur de connexion à la table 'mood': ${error.message}`);
         }
         
-        console.log('🚀 Supabase connecté avec succès via module (table humeur accessible)');
+        console.log('🚀 Supabase connecté avec succès via module (table mood accessible)');
         console.log('📊 URL configurée:', window.PRIVATE_CONFIG?.supabaseUrl);
         
         isConnected = true;
@@ -158,10 +158,10 @@ async function loadHumeursFromSupabase() {
     }
 
     try {
-        console.log('📥 Chargement des humeurs depuis Supabase...');
+        console.log('📥 Chargement des moods depuis Supabase...');
         
         const { data, error } = await supabase
-            .from('humeur')
+            .from('mood')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(100);
@@ -170,9 +170,9 @@ async function loadHumeursFromSupabase() {
             throw error;
         }
 
-        humeurs = data || [];
+        moods = data || [];
         updateDisplay();
-        console.log(`📊 ${humeurs.length} codes humeur chargés automatiquement`);
+        console.log(`📊 ${moods.length} codes mood chargés automatiquement`);
         
         // Réactiver la connexion si elle était en erreur
         if (!isConnected) {
@@ -204,12 +204,12 @@ function setupRealtimeSubscription() {
     realtimeChannel = supabase
         .channel('humeur_realtime')
         .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'humeur' },
+            { event: '*', schema: 'public', table: 'mood' },
             (payload) => {
                 console.log('🔄 Changement temps réel:', payload.eventType);
 
                 if (payload.eventType === 'INSERT') {
-                    humeurs.unshift(payload.new);
+                    moods.unshift(payload.new);
                     updateDisplay();
 
                     // Animation d'arrivée
@@ -256,7 +256,7 @@ function startAutoRefresh() {
         if (!isConnected && supabase) {
             console.log('🔌 Tentative de reconnexion...');
             try {
-                const { data, error } = await supabase.from('humeur').select('count').limit(1);
+                const { data, error } = await supabase.from('mood').select('count').limit(1);
                 if (!error) {
                     isConnected = true;
                     updateConnectionStatus(true);
@@ -320,11 +320,11 @@ function setupEventListeners() {
 }
 
 // ========================================
-// GESTION DES HUMEURS
+// GESTION DES moods
 // ========================================
 
 async function submitMood() {
-    console.log('📝 Soumission d\'une nouvelle humeur...');
+    console.log('📝 Soumission d\'une nouvelle mood...');
     
     const nom = document.getElementById('studentName')?.value?.trim();
     const langagePrefere = document.getElementById('favoriteLanguage')?.value;
@@ -365,7 +365,7 @@ async function submitMood() {
         submitBtn.textContent = '🔄 Envoi en cours...';
     }
 
-    const humeur = {
+    const mood = {
         nom: nom,
         emoji: selectedEmoji,
         langage_prefere: langagePrefere,
@@ -373,25 +373,25 @@ async function submitMood() {
         commentaire: commentaire || null
     };
 
-    console.log('📤 Données à envoyer:', humeur);
+    console.log('📤 Données à envoyer:', mood);
 
-    const success = await addHumeur(humeur);
+    const success = await addHumeur(mood);
 
     if (success) {
         resetForm();
         if (submitBtn) {
             submitBtn.textContent = '✅ Envoyé avec succès !';
             setTimeout(() => {
-                submitBtn.textContent = '🚀 Partager mon humeur';
+                submitBtn.textContent = '🚀 Partager mon mood';
                 submitBtn.disabled = false;
             }, 2500);
         }
-        console.log('✅ Humeur soumise avec succès');
+        console.log('✅ mood soumise avec succès');
     } else {
         if (submitBtn) {
             submitBtn.textContent = '❌ Erreur - Réessayer';
             setTimeout(() => {
-                submitBtn.textContent = '🚀 Partager mon humeur';
+                submitBtn.textContent = '🚀 Partager mon mood';
                 submitBtn.disabled = false;
             }, 3000);
         }
@@ -399,9 +399,9 @@ async function submitMood() {
     }
 }
 
-async function addHumeur(humeur) {
+async function addHumeur(mood) {
     if (!supabase) {
-        console.error('❌ Supabase non initialisé pour ajout humeur');
+        console.error('❌ Supabase non initialisé pour ajout mood');
         alert('Erreur : Connexion à la base de données non établie');
         return false;
     }
@@ -412,12 +412,12 @@ async function addHumeur(humeur) {
         // Anti-doublon 5 minutes
         const cinqMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         const { data: existing, error: selectError } = await supabase
-            .from('humeur')
+            .from('mood')
             .select('*')
-            .eq('nom', humeur.nom)
-            .eq('emoji', humeur.emoji)
-            .eq('langage_prefere', humeur.langage_prefere)
-            .eq('autre_preference', humeur.autre_preference)
+            .eq('nom', mood.nom)
+            .eq('emoji', mood.emoji)
+            .eq('langage_prefere', mood.langage_prefere)
+            .eq('autre_preference', mood.autre_preference)
             .gte('created_at', cinqMinutesAgo)
             .limit(1);
 
@@ -427,20 +427,20 @@ async function addHumeur(humeur) {
         
         if (existing && existing.length > 0) {
             console.warn('⚠️ Doublon détecté');
-            alert('Ce code humeur a déjà été enregistré récemment. Attendez quelques minutes avant de renvoyer.');
+            alert('Ce code mood a déjà été enregistré récemment. Attendez quelques minutes avant de renvoyer.');
             return false;
         }
 
         console.log('💾 Insertion en base de données...');
         const { error } = await supabase
-            .from('humeur')
-            .insert([humeur]);
+            .from('mood')
+            .insert([mood]);
             
         if (error) {
             throw error;
         }
         
-        console.log('✅ Humeur ajoutée à Supabase avec succès');
+        console.log('✅ mood ajoutée à Supabase avec succès');
         return true;
         
     } catch (error) {
@@ -476,10 +476,10 @@ function updateStats() {
     const varietyEl = document.getElementById('moodVariety');
     const timeEl = document.getElementById('sessionTime');
     
-    if (totalEl) totalEl.textContent = humeurs.length;
+    if (totalEl) totalEl.textContent = moods.length;
     
     if (varietyEl) {
-        const uniqueEmojis = new Set(humeurs.map(h => h.emoji));
+        const uniqueEmojis = new Set(moods.map(h => h.emoji));
         varietyEl.textContent = uniqueEmojis.size;
     }
     
@@ -493,38 +493,38 @@ function updateMoodList() {
     const listContainer = document.getElementById('moodList');
     if (!listContainer) return;
 
-    if (humeurs.length === 0) {
+    if (moods.length === 0) {
         listContainer.innerHTML = `
             <div class="loading">
-                <p>🤖 En attente des premiers codes humeur...</p>
+                <p>🤖 En attente des premiers codes mood...</p>
                 <p style="font-size: 0.9em; margin-top: 10px; color: #666;">
-                    Partage ton humeur pour commencer !
+                    Partage ton mood pour commencer !
                 </p>
             </div>
         `;
         return;
     }
 
-    listContainer.innerHTML = humeurs.map(humeur => {
-        const codeSnippet = generateCodeSnippet(humeur);
-        const timeDisplay = formatTime(humeur.created_at);
-        const isRecent = new Date() - new Date(humeur.created_at) < 60000;
+    listContainer.innerHTML = moods.map(mood => {
+        const codeSnippet = generateCodeSnippet(mood);
+        const timeDisplay = formatTime(mood.created_at);
+        const isRecent = new Date() - new Date(mood.created_at) < 60000;
         
         return `
             <div class="mood-item ${isRecent ? 'new-post' : ''}">
                 <div class="mood-header">
                     <div class="mood-user">
-                        <span class="mood-name">${escapeHtml(humeur.nom)}</span>
-                        <span class="mood-emoji">${humeur.emoji}</span>
-                        <span class="mood-lang">${humeur.langage_prefere}</span>
+                        <span class="mood-name">${escapeHtml(mood.nom)}</span>
+                        <span class="mood-emoji">${mood.emoji}</span>
+                        <span class="mood-lang">${mood.langage_prefere}</span>
                     </div>
                     <span class="mood-time">${timeDisplay}</span>
                 </div>
                 <div class="mood-content">
                     <div class="mood-code">${codeSnippet}</div>
-                    ${humeur.commentaire ? `<div class="mood-comment">"${escapeHtml(humeur.commentaire)}"</div>` : ''}
+                    ${mood.commentaire ? `<div class="mood-comment">"${escapeHtml(mood.commentaire)}"</div>` : ''}
                     <div class="mood-tags">
-                        <span class="tag">${formatPreference(humeur.autre_preference)}</span>
+                        <span class="tag">${formatPreference(mood.autre_preference)}</span>
                     </div>
                 </div>
             </div>
@@ -532,22 +532,22 @@ function updateMoodList() {
     }).join('');
 }
 
-function generateCodeSnippet(humeur) {
-    const langagePrefere = humeur.langage_prefere || 'javascript';
+function generateCodeSnippet(mood) {
+    const langagePrefere = mood.langage_prefere || 'javascript';
     
     const templates = {
-        javascript: `let humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        typescript: `const humeur: string = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        python: `humeur = "${humeur.emoji}"${humeur.commentaire ? `  # ${escapeHtml(humeur.commentaire)}` : ''}`,
-        java: `String humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        csharp: `string humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        php: `$humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        cpp: `std::string humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        rust: `let humeur = "${humeur.emoji}";${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        go: `humeur := "${humeur.emoji}"${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        kotlin: `val humeur = "${humeur.emoji}"${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        swift: `let humeur = "${humeur.emoji}"${humeur.commentaire ? ` // ${escapeHtml(humeur.commentaire)}` : ''}`,
-        ruby: `humeur = "${humeur.emoji}"${humeur.commentaire ? ` # ${escapeHtml(humeur.commentaire)}` : ''}`
+        javascript: `let mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        typescript: `const mood: string = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        python: `mood = "${mood.emoji}"${mood.commentaire ? `  # ${escapeHtml(mood.commentaire)}` : ''}`,
+        java: `String mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        csharp: `string mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        php: `$mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        cpp: `std::string mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        rust: `let mood = "${mood.emoji}";${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        go: `mood := "${mood.emoji}"${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        kotlin: `val mood = "${mood.emoji}"${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        swift: `let mood = "${mood.emoji}"${mood.commentaire ? ` // ${escapeHtml(mood.commentaire)}` : ''}`,
+        ruby: `mood = "${mood.emoji}"${mood.commentaire ? ` # ${escapeHtml(mood.commentaire)}` : ''}`
     };
 
     return templates[langagePrefere] || templates.javascript;
@@ -581,7 +581,7 @@ function updateVisualization() {
     const container = document.getElementById('moodVisualization');
     if (!container) return;
 
-    if (humeurs.length === 0) {
+    if (moods.length === 0) {
         container.innerHTML = '';
         return;
     }
@@ -589,9 +589,9 @@ function updateVisualization() {
     const emojiCounts = {};
     const langageCounts = {};
     
-    humeurs.forEach(humeur => {
-        emojiCounts[humeur.emoji] = (emojiCounts[humeur.emoji] || 0) + 1;
-        langageCounts[humeur.langage_prefere] = (langageCounts[humeur.langage_prefere] || 0) + 1;
+    moods.forEach(mood => {
+        emojiCounts[mood.emoji] = (emojiCounts[mood.emoji] || 0) + 1;
+        langageCounts[mood.langage_prefere] = (langageCounts[mood.langage_prefere] || 0) + 1;
     });
 
     container.innerHTML = `
@@ -657,8 +657,8 @@ function toggleAdminPanel() {
                     <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <p style="margin: 0; font-size: 14px; line-height: 1.6;">
                             <strong>📊 Statistiques :</strong><br>
-                            • ${humeurs.length} participants<br>
-                            • ${new Set(humeurs.map(h => h.emoji)).size} emojis différents<br>
+                            • ${moods.length} participants<br>
+                            • ${new Set(moods.map(h => h.emoji)).size} emojis différents<br>
                             • Session : ${Math.floor((new Date() - sessionStartTime) / 60000)} minutes<br><br>
                             <strong>⌨️ Raccourcis :</strong><br>
                             • <kbd>Ctrl+Shift+A</kbd> : Ce panneau<br>
@@ -679,7 +679,7 @@ function toggleAdminPanel() {
                             background: #2196f3; color: white; border: none; padding: 12px 16px; 
                             border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;
                         ">💾 Export JSON</button>
-                        <button onclick="loadHumeursFromSupabase()" style="
+                        <button onclick="loadMoodsFromSupabase()" style="
                             background: #ff9800; color: white; border: none; padding: 12px 16px; 
                             border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;
                         ">🔄 Actualiser</button>
@@ -701,15 +701,15 @@ window.closeAdminPanel = function() {
 };
 
 window.clearAllMoods = async function() {
-    if (!confirm('⚠️ Êtes-vous sûr de vouloir effacer TOUS les codes humeur ?\n\nCette action est irréversible !')) {
+    if (!confirm('⚠️ Êtes-vous sûr de vouloir effacer TOUS les codes mood ?\n\nCette action est irréversible !')) {
         return;
     }
 
     try {
-        console.log('🗑️ Suppression de toutes les humeurs...');
+        console.log('🗑️ Suppression de toutes les moods...');
         
         const { error } = await supabase
-            .from('humeur')
+            .from('mood')
             .delete()
             .neq('id', 0); // Supprimer tous les enregistrements
 
@@ -717,11 +717,11 @@ window.clearAllMoods = async function() {
             throw error;
         }
         
-        console.log('✅ Toutes les humeurs supprimées');
+        console.log('✅ Toutes les moods supprimées');
         
         // Actualiser l'affichage
         setTimeout(() => {
-            loadHumeursFromSupabase();
+            loadMoodsFromSupabase();
         }, 1000);
         
         // Fermer le panel admin
@@ -734,21 +734,21 @@ window.clearAllMoods = async function() {
 };
 
 window.exportMoods = function() {
-    if (humeurs.length === 0) {
-        alert('Aucun code humeur à exporter !');
+    if (moods.length === 0) {
+        alert('Aucun code mood à exporter !');
         return;
     }
 
     console.log('📊 Export CSV en cours...');
 
-    const exportData = humeurs.map(humeur => ({
-        'Prénom': humeur.nom,
-        'Emoji': humeur.emoji,
-        'Langage Préféré': humeur.langage_prefere,
-        'Autre Préférence': humeur.autre_preference || '',
-        'Commentaire': humeur.commentaire || '',
-        'Date/Heure': formatTime(humeur.created_at),
-        'Timestamp': humeur.created_at,
+    const exportData = moods.map(mood => ({
+        'Prénom': mood.nom,
+        'Emoji': mood.emoji,
+        'Langage Préféré': mood.langage_prefere,
+        'Autre Préférence': mood.autre_preference || '',
+        'Commentaire': mood.commentaire || '',
+        'Date/Heure': formatTime(mood.created_at),
+        'Timestamp': mood.created_at,
         'Mode': 'Supabase Module'
     }));
 
@@ -760,13 +760,13 @@ window.exportMoods = function() {
         )
     ].join('\n');
 
-    downloadFile(csvContent, `emoji-code-humeur-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    downloadFile(csvContent, `emoji-code-mood-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
     console.log('✅ Export CSV téléchargé');
 };
 
 window.exportMoodsJSON = function() {
-    if (humeurs.length === 0) {
-        alert('Aucun code humeur à exporter !');
+    if (moods.length === 0) {
+        alert('Aucun code mood à exporter !');
         return;
     }
 
@@ -777,8 +777,8 @@ window.exportMoodsJSON = function() {
             exportDate: new Date().toISOString(),
             mode: 'Supabase Module',
             sessionDuration: Math.floor((new Date() - sessionStartTime) / 60000),
-            totalParticipants: humeurs.length,
-            uniqueEmojis: new Set(humeurs.map(h => h.emoji)).size,
+            totalParticipants: moods.length,
+            uniqueEmojis: new Set(moods.map(h => h.emoji)).size,
             version: 'module-corrigé-2.3',
             supabaseConfig: {
                 url: window.PRIVATE_CONFIG?.supabaseUrl,
@@ -786,24 +786,24 @@ window.exportMoodsJSON = function() {
             }
         },
         statistics: {
-            emojiDistribution: humeurs.reduce((acc, h) => {
+            emojiDistribution: moods.reduce((acc, h) => {
                 acc[h.emoji] = (acc[h.emoji] || 0) + 1;
                 return acc;
             }, {}),
-            languageDistribution: humeurs.reduce((acc, h) => {
+            languageDistribution: moods.reduce((acc, h) => {
                 acc[h.langage_prefere] = (acc[h.langage_prefere] || 0) + 1;
                 return acc;
             }, {}),
-            preferenceDistribution: humeurs.reduce((acc, h) => {
+            preferenceDistribution: moods.reduce((acc, h) => {
                 acc[h.autre_preference] = (acc[h.autre_preference] || 0) + 1;
                 return acc;
             }, {})
         },
-        humeurs: humeurs
+        moods: moods
     };
 
     const jsonContent = JSON.stringify(exportData, null, 2);
-    downloadFile(jsonContent, `emoji-code-humeur-session-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+    downloadFile(jsonContent, `emoji-code-mood-session-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
     console.log('✅ Export JSON téléchargé');
 };
 
@@ -843,7 +843,7 @@ window.addEventListener('beforeunload', () => {
 // ========================================
 
 async function initApp() {
-    console.log('🚀 Initialisation Emoji Code Humeur (version module corrigé)...');
+    console.log('🚀 Initialisation Emoji Code mood (version module corrigé)...');
 
     try {
         // 1. Configuration des event listeners d'abord
@@ -864,7 +864,7 @@ async function initApp() {
 
         console.log('✅ Application initialisée avec succès');
         console.log('📊 Mode actuel: Supabase (module corrigé)');
-        console.log('📈 Humeurs chargées:', humeurs.length);
+        console.log('📈 moods chargées:', moods.length);
         console.log('🔗 Configuration URL:', window.PRIVATE_CONFIG?.supabaseUrl);
         
     } catch (error) {
@@ -899,7 +899,7 @@ startApp();
 window.addEventListener('load', () => {
     // Vérifier si l'app n'est pas encore initialisée après 2 secondes
     setTimeout(() => {
-        if (humeurs.length === 0 && !isConnected) {
+        if (moods.length === 0 && !isConnected) {
             console.log('🔄 Initialisation fallback après chargement complet...');
             initApp();
         }
@@ -913,7 +913,7 @@ window.addEventListener('load', () => {
 // Log périodique de l'état de l'application
 setInterval(() => {
     if (isConnected) {
-        console.log(`📊 État: ${humeurs.length} humeurs, connexion ${isConnected ? 'OK' : 'KO'}, temps réel ${realtimeChannel ? 'actif' : 'inactif'}`);
+        console.log(`📊 État: ${moods.length} moods, connexion ${isConnected ? 'OK' : 'KO'}, temps réel ${realtimeChannel ? 'actif' : 'inactif'}`);
     }
 }, 60000); // Toutes les minutes
 

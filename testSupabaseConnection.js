@@ -50,24 +50,24 @@
 
     // Étape 4 : Test de requête sur la table "humeur"
     try {
-        log('⏳ Test de requête sur la table "humeur"...');
-        const { data, error } = await supabase.from('humeur').select('*').limit(5);
+        log('⏳ Test de requête sur la table "moods"...');
+        const { data, error } = await supabase.from('moods').select('*').limit(5);
         if (error) {
             log('❌ ERREUR lors de la requête : ' + error.message);
-            if (error.message.includes('relation "public.humeur" does not exist')) {
-                log('💡 SOLUTION : La table "humeur" n\'existe pas encore. Exécutez le script SQL de création de table.');
+            if (error.message.includes('relation "public.moods" does not exist')) {
+                log('💡 SOLUTION : La table "moods" n\'existe pas encore. Exécutez le script SQL de création de table.');
                 log('📋 Script à exécuter dans Supabase SQL Editor :');
-                log('<pre>CREATE TABLE public.humeur (\n  id BIGSERIAL PRIMARY KEY,\n  nom TEXT NOT NULL,\n  emoji TEXT NOT NULL,\n  langage TEXT NOT NULL,\n  commentaire TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);</pre>');
+                log('<pre>CREATE TABLE public.moods (\n  id BIGSERIAL PRIMARY KEY,\n  nom TEXT NOT NULL,\n  emoji TEXT NOT NULL,\n  langage TEXT NOT NULL,\n  commentaire TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);</pre>');
             }
             return;
         }
-        log('✅ Requête réussie sur la table "humeur". Données trouvées :');
+        log('✅ Requête réussie sur la table "moods". Données trouvées :');
         log('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
         
         if (data.length === 0) {
-            log('ℹ️ La table "humeur" est vide. C\'est normal pour une nouvelle installation.');
+            log('ℹ️ La table "moods" est vide. C\'est normal pour une nouvelle installation.');
         } else {
-            log(`📊 ${data.length} enregistrement(s) trouvé(s) dans la table "humeur".`);
+            log(`📊 ${data.length} enregistrement(s) trouvé(s) dans la table "moods".`);
         }
 
     } catch (e) {
@@ -77,7 +77,7 @@
 
     // Étape 5 : Test des champs français
     try {
-        log('⏳ Vérification de la structure de la table "humeur"...');
+        log('⏳ Vérification de la structure de la table "moods"...');
         
         // Test d'insertion pour vérifier les champs
         const testData = {
@@ -106,7 +106,7 @@
 
         // Nettoyer le test
         if (data[0]?.id) {
-            await supabase.from('humeur').delete().eq('id', data[0].id);
+            await supabase.from('moods').delete().eq('id', data[0].id);
             log('🧹 Enregistrement de test supprimé.');
         }
 

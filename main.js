@@ -50,7 +50,7 @@ async function initSupabase() {
         updateConnectionStatus(true);
         
         // Charger les données existantes
-        await loadHumeursFromSupabase();
+        await loadMoodsFromSupabase();
         
         // Configurer le temps réel
         setupRealtimeSubscription();
@@ -151,7 +151,7 @@ function updateConnectionStatus(connected) {
     }
 }
 
-async function loadHumeursFromSupabase() {
+async function loadMoodsFromSupabase() {
     if (!supabase || !isConnected) {
         console.log('⏭️ Chargement ignoré - Supabase non connecté');
         return;
@@ -202,7 +202,7 @@ function setupRealtimeSubscription() {
     console.log('📡 Configuration du temps réel...');
 
     realtimeChannel = supabase
-        .channel('humeur_realtime')
+        .channel('mood_realtime')
         .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'mood' },
             (payload) => {
@@ -223,7 +223,7 @@ function setupRealtimeSubscription() {
                         }
                     }, 100);
                 } else if (payload.eventType === 'DELETE') {
-                    loadHumeursFromSupabase();
+                    loadMoodsFromSupabase();
                 }
             }
         )
@@ -248,7 +248,7 @@ function startAutoRefresh() {
     // Actualisation automatique périodique
     autoRefreshInterval = setInterval(async () => {
         console.log('🔄 Actualisation automatique...');
-        await loadHumeursFromSupabase();
+        await loadMoodsFromSupabase();
     }, AUTO_REFRESH_INTERVAL);
 
     // Vérification de connexion périodique
@@ -260,7 +260,7 @@ function startAutoRefresh() {
                 if (!error) {
                     isConnected = true;
                     updateConnectionStatus(true);
-                    await loadHumeursFromSupabase();
+                    await loadMoodsFromSupabase();
                     console.log('✅ Reconnexion réussie');
                 }
             } catch (error) {
@@ -375,7 +375,7 @@ async function submitMood() {
 
     console.log('📤 Données à envoyer:', mood);
 
-    const success = await addHumeur(mood);
+    const success = await addMood(mood);
 
     if (success) {
         resetForm();
@@ -399,7 +399,7 @@ async function submitMood() {
     }
 }
 
-async function addHumeur(mood) {
+async function addMood(mood) {
     if (!supabase) {
         console.error('❌ Supabase non initialisé pour ajout mood');
         alert('Erreur : Connexion à la base de données non établie');
